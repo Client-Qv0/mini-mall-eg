@@ -6,7 +6,7 @@ import { formatCurrency } from "@/lib/utils";
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await requireUser();
+    await requireUser();
     const body = await req.json();
     const parsed = validateCouponSchema.safeParse(body);
     if (!parsed.success) {

@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 
 type CartItemsProps = {
   items: {

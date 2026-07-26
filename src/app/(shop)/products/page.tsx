@@ -29,7 +29,7 @@ export default async function ProductsPage({
     prisma.category.findMany({ orderBy: { name: "asc" } }),
   ]);
 
-  const { data: products, total, totalPages } = productsData;
+  const { data: products, totalPages } = productsData;
 
   const baseUrl = `/products?${new URLSearchParams({ search, categoryId }).toString()}`;
 
