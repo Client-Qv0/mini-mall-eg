@@ -1,9 +1,14 @@
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { LogoutButton } from "./logout-button";
 
 export async function Header() {
   const user = await getSession();
+
+  const cartCount = user
+    ? await prisma.cartItem.count({ where: { userId: user.id } })
+    : 0;
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-zinc-200">
@@ -27,9 +32,14 @@ export async function Header() {
         <div className="flex items-center gap-3">
           <Link
             href="/cart"
-            className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors"
+            className="relative text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors"
           >
             购物车
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-4 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-primary rounded-full">
+                {cartCount}
+              </span>
+            )}
           </Link>
 
           {user ? (
