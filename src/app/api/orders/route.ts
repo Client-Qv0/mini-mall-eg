@@ -17,64 +17,63 @@ export async function POST(req: NextRequest) {
 
     const { couponCode } = parsed.data;
 
-    const cartItems = await prisma.cartItem.findMany({
-      where: { userId: user.id },
-      include: { product: true },
-    });
-
-    if (cartItems.length === 0) {
-      return NextResponse.json({ error: "购物车为空" }, { status: 400 });
-    }
-
-    let subtotal = 0;
-    for (const item of cartItems) {
-      if (item.quantity > item.product.stock) {
-        return NextResponse.json(
-          { error: `${item.product.name} 库存不足` },
-          { status: 400 }
-        );
-      }
-      subtotal += item.product.price * item.quantity;
-    }
-
-    let discountAmount = 0;
-    let couponId: number | null = null;
-
-    if (couponCode) {
-      const coupon = await prisma.coupon.findUnique({
-        where: { code: couponCode },
+    const order = await prisma.$transaction(async (tx) => {
+      const cartItems = await tx.cartItem.findMany({
+        where: { userId: user.id },
+        include: { product: true },
       });
 
-      if (!coupon || !coupon.isActive) {
-        return NextResponse.json({ error: "优惠券无效" }, { status: 400 });
+      if (cartItems.length === 0) {
+        throw new Error("购物车为空");
       }
 
-      if (coupon.expiresAt && coupon.expiresAt < new Date()) {
-        return NextResponse.json({ error: "优惠券已过期" }, { status: 400 });
+      let subtotal = 0;
+      for (const item of cartItems) {
+        const product = await tx.product.findUniqueOrThrow({
+          where: { id: item.productId },
+        });
+        if (item.quantity > product.stock) {
+          throw new Error(`${product.name} 库存不足`);
+        }
+        subtotal += product.price * item.quantity;
       }
 
-      if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
-        return NextResponse.json({ error: "优惠券已用完" }, { status: 400 });
+      let discountAmount = 0;
+      let couponId: number | null = null;
+
+      if (couponCode) {
+        const coupon = await tx.coupon.findUnique({
+          where: { code: couponCode },
+        });
+
+        if (!coupon || !coupon.isActive) {
+          throw new Error("优惠券无效");
+        }
+
+        if (coupon.expiresAt && coupon.expiresAt < new Date()) {
+          throw new Error("优惠券已过期");
+        }
+
+        if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
+          throw new Error("优惠券已用完");
+        }
+
+        if (coupon.minOrderValue && subtotal < coupon.minOrderValue) {
+          throw new Error(
+            `订单金额需满 ¥${(coupon.minOrderValue / 100).toFixed(2)}`
+          );
+        }
+
+        discountAmount =
+          coupon.discountType === "PERCENTAGE"
+            ? Math.floor((subtotal * coupon.discountValue) / 100)
+            : coupon.discountValue;
+
+        couponId = coupon.id;
       }
 
-      if (coupon.minOrderValue && subtotal < coupon.minOrderValue) {
-        return NextResponse.json(
-          { error: `订单金额需满 ¥${(coupon.minOrderValue / 100).toFixed(2)}` },
-          { status: 400 }
-        );
-      }
+      const total = Math.max(0, subtotal - discountAmount);
 
-      discountAmount =
-        coupon.discountType === "PERCENTAGE"
-          ? Math.floor((subtotal * coupon.discountValue) / 100)
-          : coupon.discountValue;
-
-      couponId = coupon.id;
-    }
-
-    const total = subtotal - discountAmount;
-
-    const order = await prisma.$transaction(async (tx) => {
       const created = await tx.order.create({
         data: {
           userId: user.id,
@@ -115,6 +114,14 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     if (e instanceof Error && e.message === "Unauthorized") {
       return NextResponse.json({ error: "请先登录" }, { status: 401 });
+    }
+    if (
+      e instanceof Error &&
+      ["购物车为空", "库存不足", "优惠券无效", "优惠券已过期", "优惠券已用完"].some((m) =>
+        e.message.includes(m)
+      )
+    ) {
+      return NextResponse.json({ error: e.message }, { status: 400 });
     }
     return NextResponse.json({ error: "服务器错误" }, { status: 500 });
   }

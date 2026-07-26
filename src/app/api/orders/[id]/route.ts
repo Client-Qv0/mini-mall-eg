@@ -39,6 +39,11 @@ export async function PUT(
   try {
     await requireAdmin();
     const { id } = await params;
+    const orderId = parseInt(id);
+    if (isNaN(orderId)) {
+      return NextResponse.json({ error: "订单不存在" }, { status: 404 });
+    }
+
     const body = await req.json();
     const parsed = updateOrderStatusSchema.safeParse(body);
     if (!parsed.success) {
@@ -48,8 +53,15 @@ export async function PUT(
       );
     }
 
+    const existing = await prisma.order.findUnique({
+      where: { id: orderId },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: "订单不存在" }, { status: 404 });
+    }
+
     const order = await prisma.order.update({
-      where: { id: parseInt(id) },
+      where: { id: orderId },
       data: { status: parsed.data.status },
     });
 

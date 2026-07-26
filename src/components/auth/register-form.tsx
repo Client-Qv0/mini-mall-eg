@@ -23,6 +23,7 @@ export function RegisterForm() {
         username: formData.get("username"),
         email: formData.get("email"),
         password: formData.get("password"),
+        confirmPassword: formData.get("confirmPassword"),
       }),
     });
 
@@ -64,8 +65,15 @@ export function RegisterForm() {
         name="password"
         type="password"
         label="密码"
-        placeholder="至少6个字符"
+        placeholder="至少8位，包含字母和数字"
         error={errors.password}
+      />
+      <Input
+        name="confirmPassword"
+        type="password"
+        label="确认密码"
+        placeholder="再次输入密码"
+        error={errors.confirmPassword}
       />
       {serverError && (
         <p className="text-sm text-red-500 text-center">{serverError}</p>

@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "dev-secret-change-in-production"
-);
+function getSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    console.error("JWT_SECRET is not set");
+    return new TextEncoder().encode("fallback-only-for-middleware-edge");
+  }
+  return new TextEncoder().encode(secret);
+}
+
+const SECRET = getSecret();
 
 const adminOnlyPaths = ["/admin", "/api/admin"];
 
