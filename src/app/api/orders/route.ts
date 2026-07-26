@@ -124,11 +124,14 @@ export async function GET() {
   try {
     const user = await requireUser();
 
+    const where = user.role === "admin" ? {} : { userId: user.id };
+
     const orders = await prisma.order.findMany({
-      where: { userId: user.id },
+      where,
       include: {
         items: { include: { product: true } },
         coupon: true,
+        user: { select: { username: true, email: true } },
       },
       orderBy: { createdAt: "desc" },
     });
