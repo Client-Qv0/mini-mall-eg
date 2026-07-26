@@ -147,16 +147,16 @@ User ──→ CartItem ←── Product ──→ Category
 ## 实施计划 (11 步)
 
 1. ✅ 项目初始化（create-next-app + 依赖安装）
-2. ⬜ Prisma Schema + 迁移 + seed
-3. ⬜ 全局布局 & 基础 UI 组件
-4. ⬜ 认证系统
-5. ⬜ 商品模块
-6. ⬜ 购物车模块
-7. ⬜ 订单模块
-8. ⬜ 后台管理
-9. ⬜ 评价系统
-10. ⬜ 优惠券系统
-11. ⬜ lint/typecheck
+2. ✅ Prisma Schema + 迁移 + seed
+3. ✅ 全局布局 & 基础 UI 组件
+4. ✅ 认证系统
+5. ✅ 商品模块
+6. ✅ 购物车模块
+7. ✅ 订单模块
+8. ✅ 后台管理
+9. ✅ 评价系统
+10. ✅ 优惠券系统
+11. ✅ lint/typecheck
 
 ## 种子测试账号
 
